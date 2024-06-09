@@ -10,17 +10,23 @@ namespace TextCompression
     {
         static void Main(string[] args)
         {
-            // Passo 1: Perguntar sobre Case-Sensitive
-            Console.WriteLine("Deseja que a compressão seja case-sensitive? (S/N): ");
+            byte MININUM_REP = 5;
+            byte MINIMUM_CHAR_NUMBER = 5;
+            Console.WriteLine("Do you want compression to be case-sensitive? (S/N): ");
             bool caseSensitive = Console.ReadLine().Trim().ToUpper() == "S";
 
-            // Passo 2: Ler o arquivo de texto e colocar as palavras em um conjunto de dados
-            Console.WriteLine("Digite o caminho do arquivo de texto:");
+            Console.WriteLine("Enter with the file path below:");
             string filePath = Console.ReadLine();
+
+            Console.WriteLine("Compress word with at least how many characters?");
+            MINIMUM_CHAR_NUMBER = byte.Parse(Console.ReadLine());
+
+            Console.WriteLine("Compress word with at least how many repetitions?");
+            MININUM_REP = byte.Parse(Console.ReadLine());
 
             if (!File.Exists(filePath))
             {
-                Console.WriteLine("Arquivo não encontrado.");
+                Console.WriteLine("File not found.");
                 return;
             }
 
@@ -28,18 +34,15 @@ namespace TextCompression
             char[] delimiters = { ' ', ',', '.', ';', ':', '!', '?', '\n', '\r', '\t' };
             List<string> words = text.Split(delimiters, StringSplitOptions.RemoveEmptyEntries).ToList();
 
-            // Passo 3: Organizar em ordem alfabética e aplicar Case-Sensitivity se necessário
-            if (!caseSensitive)
-            {
+            if (!caseSensitive)            
                 words = words.Select(word => word.ToLower()).ToList();
-            }
+            
             words.Sort();
 
-            // Passo 4: Contagem das palavras
             Dictionary<string, int> wordCount = new Dictionary<string, int>();
             foreach (var word in words)
             {
-                if (word.Length <= 3) continue; // Ignorar palavras com 3 caracteres ou menos
+                if (word.Length <= MINIMUM_CHAR_NUMBER) continue;
 
                 if (wordCount.ContainsKey(word))
                 {
@@ -51,45 +54,41 @@ namespace TextCompression
                 }
             }
 
-            // Passo 5: Criar um dicionário para as palavras que se repetiram mais de 3 vezes
             Dictionary<string, string> compressionDictionary = new Dictionary<string, string>();
             int code = 1;
 
             foreach (var kvp in wordCount)
             {
-                if (kvp.Value > 5)
+                if (kvp.Value > MININUM_REP)
                 {
                     compressionDictionary[kvp.Key] = "$" + code.ToString();
                     code++;
                 }
             }
 
-            // Passo 6: Substituição no texto usando Regex para garantir substituição de palavras inteiras
             foreach (var kvp in compressionDictionary)
             {
                 string pattern = $@"\b{Regex.Escape(kvp.Key)}\b";
                 text = Regex.Replace(text, pattern, kvp.Value);
             }
 
-            // Construir o texto comprimido com o dicionário no início
-            string compressedText = "Dicionário de Compressão:\n";
+            string compressedText = "Dictionary:\n";
             foreach (var kvp in compressionDictionary)
             {
                 compressedText += $"{kvp.Value} => {kvp.Key}\n";
             }
             compressedText += "\n" + text;
 
-            // Salvar o texto comprimido em um novo arquivo
             string compressedFilePath = filePath.Insert(filePath.LastIndexOf('.'), "_compressed");
             File.WriteAllText(compressedFilePath, compressedText);
 
-            Console.WriteLine("Dicionário de Compressão:");
+            Console.WriteLine("Dictionary:");
             foreach (var kvp in compressionDictionary)
             {
                 Console.WriteLine($"{kvp.Key} => {kvp.Value}");
             }
 
-            Console.WriteLine($"Texto comprimido salvo em: {compressedFilePath}");
+            Console.WriteLine($"File saved at: {compressedFilePath}");
         }
     }
 }
